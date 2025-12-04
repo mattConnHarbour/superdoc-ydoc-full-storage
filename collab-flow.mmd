@@ -6,11 +6,11 @@ flowchart TB
         C -->|No| E[Standard Mode]
     end
 
-    subgraph CollabSetup["Collaboration Setup"]
+    subgraph CollabSetup["Collaboration Setup<br/>(packages/superdoc/src/core/SuperDoc.js:363)"]
         D --> F["Create HocuspocusProviderWebsocket<br/>(config.socket)"]
-        F --> G["makeDocumentsCollaborative()"]
+        F --> G["makeDocumentsCollaborative()<br/>(packages/superdoc/src/core/collaboration/helpers.js:88)"]
         G --> H["For each document:<br/>createProvider()"]
-        H --> I["createHocuspocusProvider()"]
+        H --> I["createHocuspocusProvider()<br/>(packages/superdoc/src/core/collaboration/collaboration.js:91)"]
         I --> J["new YDoc({ gc: false })"]
         J --> K["new HocuspocusProvider({<br/>websocketProvider: socket,<br/>document: ydoc,<br/>name: documentId<br/>})"]
         K --> L["Attach ydoc & provider<br/>to document config"]
@@ -18,46 +18,46 @@ flowchart TB
 
     subgraph EditorInit["Super-Editor Initialization"]
         L --> M["SuperEditor created<br/>with ydoc in options"]
-        M --> N["Collaboration Extension<br/>addPmPlugins()"]
-        N --> O["initDocumentListener()<br/>(collaboration.js:28)"]
+        M --> N["Collaboration Extension<br/>addPmPlugins()<br/>(packages/super-editor/src/extensions/collaboration/collaboration.js:23)"]
+        N --> O["🔗 initDocumentListener()<br/><br/>📍 collaboration.js#L28<br/>github.com/.../collaboration.js#L28"]
         N --> P["initializeMetaMap()<br/>(collaboration.js:70)"]
     end
 
-    subgraph MetaMapInit["Initial Meta Map Setup (New Files)"]
-        P --> Q["ydoc.getMap('meta')"]
-        Q --> R["metaMap.set('docx', editor.options.content)"]
-        Q --> S["metaMap.set('fonts', editor.options.fonts)"]
-        Q --> T["mediaMap = ydoc.getMap('media')"]
+    subgraph MetaMapInit["Initial Meta Map Setup (New Files)<br/>(collaboration.js:70-79)"]
+        P --> Q["ydoc.getMap 'meta'"]
+        Q --> R["metaMap.set 'docx'<br/>editor.options.content"]
+        Q --> S["metaMap.set 'fonts'<br/>editor.options.fonts"]
+        Q --> T["mediaMap = ydoc.getMap 'media'"]
         T --> U["Store all media files"]
     end
 
-    subgraph DocxContent["What's in editor.options.content (docx array)"]
+    subgraph DocxContent["What's in editor.options.content - docx array"]
         R --> V["Array of DOCX XML files:"]
         V --> V1["word/document.xml"]
-        V --> V2["word/styles.xml ⭐"]
+        V --> V2["word/styles.xml ⭐<br/>STYLES ARE HERE"]
         V --> V3["word/numbering.xml"]
         V --> V4["word/settings.xml"]
         V --> V5["word/_rels/document.xml.rels"]
-        V --> V6["[Content_Types].xml"]
+        V --> V6["Content_Types.xml"]
         V --> V7["Headers/Footers"]
         V --> V8["docProps/custom.xml"]
     end
 
-    subgraph TransactionListener["Document Change Listener"]
-        O --> W["ydoc.on('afterTransaction')"]
+    subgraph TransactionListener["Document Change Listener<br/>(collaboration.js:93-106)"]
+        O --> W["ydoc.on 'afterTransaction'"]
         W --> X{"Local change?<br/>Not a docx update?"}
-        X -->|Yes| Y["Debounced (1s):<br/>updateYdocDocxData()"]
+        X -->|Yes| Y["Debounced 1s:<br/>updateYdocDocxData()"]
     end
 
-    subgraph UpdateFlow["updateYdocDocxData() Flow<br/>(collaboration-helpers.js:7)"]
-        Y --> Z["Get current docx from<br/>metaMap.get('docx')"]
-        Z --> AA["editor.exportDocx({<br/>getUpdatedDocs: true<br/>})"]
-        AA --> AB["Returns updated XML files:<br/>document.xml, styles.xml,<br/>numbering.xml, etc."]
-        AB --> AC["Merge new XML into<br/>docx array"]
-        AC --> AD["ydoc.transact(() => {<br/>metaMap.set('docx', docx)<br/>})"]
+    subgraph UpdateFlow["🔗 updateYdocDocxData Flow<br/><br/>📍 collaboration-helpers.js#L14<br/>github.com/.../collaboration-helpers.js#L14"]
+        Y --> Z["Get current docx from<br/>metaMap.get 'docx'<br/>(line 14)"]
+        Z --> AA["editor.exportDocx<br/>getUpdatedDocs: true<br/>(line 29)"]
+        AA --> AB["Returns updated XML files:<br/>document.xml, styles.xml,<br/>numbering.xml, etc.<br/>(Editor.ts:1791-1836)"]
+        AB --> AC["Merge new XML into<br/>docx array<br/>(lines 32-41)"]
+        AC --> AD["ydoc.transact =><br/>metaMap.set 'docx' docx<br/>(lines 43-48)"]
     end
 
-    subgraph WSSync["WebSocket Sync"]
+    subgraph WSSync["WebSocket Sync<br/>(Hocuspocus/Yjs)"]
         AD --> AE["Yjs syncs changes<br/>to Hocuspocus server"]
         AE --> AF["Server broadcasts to<br/>all connected clients"]
         AF --> AG["Other clients receive<br/>ydoc updates"]
@@ -66,10 +66,19 @@ flowchart TB
     subgraph RemoteUpdate["Remote Client Receives Update"]
         AG --> AH["ydoc transaction triggers<br/>on remote clients"]
         AH --> AI["meta map updated with<br/>new docx array"]
-        AI --> AJ["Includes all DOCX files:<br/>styles.xml, document.xml, etc."]
+        AI --> AJ["Includes ALL DOCX files:<br/>styles.xml, document.xml,<br/>numbering.xml, etc."]
+    end
+
+    subgraph Legend["📚 Key Source Links"]
+        L1["🔗 Listens for doc changes:<br/>collaboration.js#L28"]
+        L2["🔗 Updates ydoc via updateYdocDocxData:<br/>collaboration-helpers.js#L7"]
+        L3["🔗 DOCX stored in meta map:<br/>collaboration-helpers.js#L14"]
     end
 
     style V2 fill:#90EE90,stroke:#006400,stroke-width:3px
     style R fill:#87CEEB,stroke:#00008B,stroke-width:2px
     style AD fill:#87CEEB,stroke:#00008B,stroke-width:2px
     style AJ fill:#90EE90,stroke:#006400,stroke-width:2px
+    style O fill:#FFD700,stroke:#FF8C00,stroke-width:3px
+    style UpdateFlow fill:#FFF8DC,stroke:#FF8C00,stroke-width:2px
+    style Legend fill:#F0F8FF,stroke:#4169E1,stroke-width:2px
